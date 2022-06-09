@@ -1,1 +1,694 @@
-Hello World
+<html> 
+  <head> 
+    <title> Calculating diversity faultlines with the asw.cluster package in R: A step-by-step guide for beginners </title>
+  </head> 
+<body>
+<h1 id="title" align="center">Calculating diversity faultlines with the asw.cluster package in R:<br>A step-by-step guide for beginners </h1>
+<center>
+<p><a style="text-decoration: none" href="http://www.psychologie.uzh.ch/fachrichtungen/sowi/Mitarbeiter/bertoltmeyer.html">Bertolt Meyer</a> & <a style="text-decoration: none" href="http://www.psychologie.uzh.ch/fachrichtungen/sozpsy/Team1/aglenz.html">Andreas Glenz</a></p>
+<p>Last update: 2018-02-12</p>
+</center>
+
+<center>
+<p>This is the supplemental material for:</p>
+
+<p style="padding: 3px; width: 594px; border: 1px solid #A7A7A7">Meyer, B. & Glenz, A. (2013). Team faultline measures: A computational comparison and a new approach to multiple subgroups. <i>Organizational Research Methods,16</i>, 393-424. doi:<a style="text-decoration: none" href="http://orm.sagepub.com/content/early/2013/04/25/1094428113484970">10.1177/1094428113484970</a></p>
+
+<p>A PDF version of this manual is <a href="http://group-faultlines.org/manual_2.10.pdf" target="_blank">here</a>.</p>
+</center>
+
+
+<h1 id="new-features">New features of version 2.0</h1>
+<ul>
+<li><p><i>Ego-Faultlines:</i> Determine faultlines from each group members individual perspective, by using the parameter <code>i.level = TRUE</code> (see <a href="#ego-faultlines">section 6.1.3</a>).</p></li>
+<li><p><i>Subgroup Homogeneity: </i>Alternative method for silhouette-width calculation that accounts for outgroup homogeneity (parameter <code>usesghomo = TRUE</code>).</p></li>
+<li><p><i>Attribute weights: </i>Use weighed average of single-attribute faultlines as a new method to account for differences in attribute relevances (parameter <code>by.attr = TRUE</code>).</p></li>
+</ul>
+
+
+
+
+
+
+
+<hr>
+<h1 id="introduction-and-download-instructions">1. Introduction</h1>
+<p>This manual describes how to calculate various diversity faultline measures with the open source statistical environment R (R Development Core Team, 2011), using the <code>asw.cluster</code> package provided below. R packages are extensions (like plug-ins) that extend the functionality of R by adding new commands to the basic set of commands available in R. The <code>asw.cluster</code> package adds the function <code>faultlines()</code> to R. This function can calculate the diversity faultline measures proposed by Bezrukova, Jehn, Zanutto, and Thatcher (2009), by Gibson and Vermeulen (2003), by Meyer and Glenz (2013), by Shaw (2004), by Thatcher, Jehn, and Zanutto (2003), by Trezzini (2008), by van Knippenberg, Dawson, West, and Homan (2011), and by Lawrence and Zyphur (2011). </p>
+<p>This manual is intended for both novice and experienced users of R. Novice users who have never used R before can read it as a step-by-step guide for calculating diversity faultline measures for a data set that already exists in a file such as an SPSS data file or a comma-separated-value text file. Experienced R users will find information on organizing their team data prior to calculations (see <a href="#import">Section 5</a>) and examples (see <a href="#examples">Section 6</a>).</p>
+
+<p> Experienced R users can install the package with the following two commands:</p>
+<code>install.packages(c("flexmix", "nnet", "nFactors", "QuantPsyc", "psych"))</code></br>
+<code>install.packages("asw.cluster", repos="http://www.group-faultlines.org/packages", type="source")</code>
+<p>and can call <code>?faultlines()</code> afterwards.</p>
+
+<p>For license reasons, we are currently unable to make the package available from the CRAN repository. </p>
+
+<h1 id="installing-r">2. Installing R</h1>
+<p>The first step is the installation of R. To install R, download the most current version for the required operating system from <a href="http://www.r-project.org"><code class="url">http://www.r-project.org</code></a>. Access the website, click on the link &quot;CRAN&quot; (Comprehensive R Archive Network) in the navigation on the left and choose the download server closest to your physical location. Next, select your operating system, download the installation file, and execute it. After the installation is complete, launch R by double-clicking its program icon.<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup></p>
+
+
+<h1 id="first-steps-in-r">3. First steps in R</h1>
+<p>When you launch R, you see one window entitled &quot;Console&quot;. This is where R outputs the results from the user&#x0027s commands (like the output viewer in SPSS). Commands can also be entered in a one-by-one fashion into the console by typing them in at the <code>&gt;</code> prompt.</p>
+
+<h2 id="opening-a-new-empty-syntax-file">3.1 Opening a new empty syntax file</h2>
+<p>Typing commands into the console is cumbersome. It is better practice to open a syntax file in a separate window and to type your syntax into it. This syntax can be executed line by line, or you can execute several highlighted lines of code at once. To open a new empty syntax file on a Mac, select &quot;New File&quot; from the &quot;Files&quot; menu. On a Windows installation of R, select &quot;New Script&quot; from &quot;File&quot;.</p>
+<p><a name="exec"></a>In a syntax file, highlighted code is executed by simultaneously hitting the keys Ctrl and the letter R on Windows machines. On Mac installations, highlighted code is executed by pressing the cmd key and the enter key simultaneously. If no code his highlighted, doing this will result in the execution of the code in the line where the cursor is positioned.</p>
+
+<h2><a name="wd">3.2 Setting the working directory</a></h2>
+<p>One important concept when working with R is the so-called working directory. In a given R session, R treats one folder on the hard drive as a standard directory where it saves files and where it looks for the files that the user wishes to open. Thus, as a first step in your R session, you should specify a directory as a working directory. This directory should contain the data set containing the teams for which faultlines are to be calculated.</p>
+<p>On Windows, the working directory is set by selecting &quot;Change directory&quot; from the &quot;Files&quot; menu. On a Mac, the working directory is set by selecting &quot;Change working directory&quot; from the &quot;Extras&quot; menu. Navigate to the directory that contains the data and the package files, and click &quot;choose&quot;.</p>
+<p>To see the path of the current working directory, you can execute the command <code>getwd()</code> from your syntax file. It will print the location of the current working directory to the console.</p>
+<p>You are now ready to install the package that enables R to calculate faultlines.</p>
+
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>R is a powerful and flexible statistical environment for analyses and visualizations. If you do not already use R, the authors strongly recommend to familiarize yourself with its the core principles. An excellent introduction to the R environment is available as a PDF from this address: <a href="http://cran.r-project.org/doc/manuals/R-intro.pdf"><code class="url">http://cran.r-project.org/doc/manuals/R-intro.pdf</code></a><a href="#fnref1"></a></p></li>
+</ol>
+</div>
+
+<h1><a name="install">4. Installing the asw.cluster package</a></h1>
+<p>The asw.cluster package requires some other packages to work properly. These so-called dependencies must be installed before the package can be activated. To install the dependent packages, make sure that your internet connection is working and copy the following command into your syntax file and execute it (click <a href="#exec">here</a> to see how to execute syntax):</p>
+<pre><code>install.packages(c("flexmix", "nnet", "nFactors", "QuantPsyc", "psych"))</code></pre>
+<p>Subsequently, execute the following command to download the <code>asw.cluster</code> package:</p>
+<pre><code>install.packages("asw.cluster", repos="http://www.group-faultlines.org/packages", type="source")</code></pre>
+
+<p>As a next step, the package must be activated. To do so, execute the following command:</p>
+<pre><code>library(asw.cluster)</code></pre>
+<p>The console should echo this command, followed by the input prompt <code>&gt;</code> indicating that no errors occurred during the activation of the package. You are now ready to import your data set into R and to calculate diversity faultlines.</p>
+<p><em>Note that the package needs to be installed only once on your computer, but that you must activate it again if you quit and re-launch R.</em></p>
+<p>In other words, <code>install.packages()</code> must be executed only once, but <code> library(asw.cluster)</code> must be called after every relaunch of R.</p>
+<p>Note that this manual is also available as a vignette in the <code>asw.cluster</code>-package. To access the document as PDF, use the R command</p>
+<p><code>vignette("asw.cluster.guide_1.1.pdf")</code></p>
+
+
+<h1><a name="import">5. Importing team data into R</a></h1>
+<p>To import your data into R, the data file needs to be read into R&#x0027s working memory, which is called the workspace. More specifically, you need to create a data frame object that contains your data. The term data frame is R&#x0027s denomination for data set. The commands required for creating a data frame object with your data in it depend on the type of file that holds your data. The following two subsections explain how to read SPSS data and comma-separated-value plain text data.</p>
+
+
+
+
+<h2 id="importing-spss-data-sets">5.1 Importing SPSS data sets</h2>
+<p>To read an SPSS data file with the ending .sav with the following syntax, it must reside in the current working directory (click <a href="#wd">here</a> to see how to set the working directory). The command required to read SPSS files, <code>read.spss()</code>, is included in the package <code>foreign</code>, which is included in the standard installation of R but must be activated prior to use. Activate it by executing the following command:</p>
+<pre><code>library(foreign)</code></pre>
+<p>Before importing your SPSS data file, here are some guidelines on how the file should be organized:</p>
+<ul>
+<li><p>The file must contain the demographic information for the team members of all teams for which faultlines are to be calculated. Each row should represent a team member, and the diversity attributes of team members such as age, gender, or personality, should be in the columns. The file can also contain further variables that are not of interest for the faultline calculation, such as an experimental treatment, date of data acquisition, and so forth.</p></li>
+<li><p>If the data file contains more than one team, it must include a numeric variable indicating team membership to a given numbered team for each team member. For example, if the first three rows of the data set represent three members of team 1, the first three entries of this variable must read 1, 1, 1. Teams need not be numbered consecutively, but a consecutive numbering from 1 to n where n denotes the total number of teams makes things easier in a later stage of the analysis.</p></li>
+<li><p>In R, SPSS variable labels cannot be used to address specific variables (they can however be displayed). Only the actual variable names are used in R so make sure that your variables have short and meaningful names such as &quot;age&quot;, &quot;gender&quot;, or &quot;ethnicity&quot;.</p></li>
+<li><p>Make sure that in the SPSS data file, nominal variables such as gender or ethnicity are either coded as numeric values with value labels or as character strings (e.g., &quot;female&quot; or &quot;male&quot; as values in the gender variable) and that their scale type is set to &quot;nominal&quot;.</p></li>
+<li><p>Make sure that numeric variables with metric or interval scale such as questionnaire items denoting agreement or disagreement on a scale from 1 to 5 <strong>do not</strong> have value labels such as &quot;I strongly agree&quot;. The reason for this is that when importing the SPSS data into R, R will overwrite the numeric values with the value labels, which makes numeric operations on these variables impossible.</p></li>
+<li><p>Make sure that missing values are defined as system missing<br />($SYSMIS) in SPSS, i.e., that they show up as an empty cell with a dot in them in the SPSS data view. Only system missing variables will be recognized as missing values by R.</p></li>
+</ul>
+<p>If these considerations are met, you can import your SPSS data file into R using the following syntax, which assumes your data file is called teamdata.sav and resides in your current working directory (make sure to highlight all of the lines and to call <code>library(foreign)</code> before):</p>
+<pre><code>teamdata &lt;- read.spss(file = &quot;teamdata.sav&quot;, 
+                      to.data.frame = TRUE, 
+                      reencode = TRUE)</code></pre>
+<p>This command might return a warning with regard to an unknown data type, but those can be ignored as long as R does not echo an error. These warnings simply indicate that R encountered a special character that it had trouble converting, but the data set has been read completely.</p>
+<p>By executing this command, you have learned the basic principle of R syntax: A command or function has a specific name followed by round brackets, <code>read.spss()</code> in this case. Inside the brackets, you specify the parameters that the function needs. Each parameter has a name and a value, e.g., <code>file = &quot;teamdata.sav&quot;</code>. The assignment operator, the left arrow <code>&lt;-</code>, is used to store the result of the command, a complete data frame in this case, into an object of an arbitrary name, <code>teamdata</code> in this case. This object resides in the workspace and can be used for further operations until it is deleted or R is quit. To learn which parameters a function needs, open its help page by typing <code>?</code> followed by the function name, e.g.,</p>
+<pre><code>?read.spss()</code></pre>
+
+<h2 id="importing-data-from-comma-separated-values-files">5.2 Importing data from comma separated values files</h2>
+<p>A very common file format for data sets is the comma separated values (.csv) format. Files in the csv format are plain text files that contain a row for each observation in the data set, and the values of different variables are separated by commas. All statistical software packages and spreadsheet applications such as Microsoft Excel can read and write csv files.</p>
+<p>To read a csv data file with the ending .csv with the following syntax, it must reside in the current working directory (click <a href="#wd">here</a> to see how to set the working directory). Before importing your csv data file, here are some guidelines on how the file should be organized:</p>
+<ul>
+<li><p>The file must contain the demographic information for the team members of all teams for which faultlines are to be calculated. Each row should represent a team member, and the diversity attributes of team members such as age, gender, or personality, should be in the columns. The file can also contain further variables that are not of interest for the faultline calculation, such as an experimental treatment, date of data acquisition, and so forth.</p></li>
+<li><p>If the data file contains more than one team, it must include a numeric variable indicating team membership to a given numbered team for each team member. For example, if the first three rows of the data set represent three members of team 1, the first three entries of this variable must read 1, 1, 1. Teams need not be numbered consecutively, but a consecutive numbering from 1 to n where n denotes the total number of teams makes things easier in a later stage of the analysis.</p></li>
+<li><p>Make sure that missing values are simply missing values in the data frame.</p></li>
+</ul>
+<p>If these considerations are met, you can import your csv data file into R using the following syntax, which assumes your data file is called teamdata.csv and resides in your current working directory:</p>
+<pre><code>teamdata &lt;- read.csv(file = &quot;teamdata.csv&quot;)</code></pre>
+<p>In countries employing the comma as the decimal separator (e.g., Germany), csv files use the semicolon for separating the values in rows. In these countries, use the <code>read.csv2</code> function:</p>
+<pre><code>teamdata &lt;- read.csv2(file = &quot;teamdata.csv&quot;)</code></pre>
+<p>By executing this command, you have learned the basic principle of R syntax: A command or function has a specific name followed by round brackets, <code>read.csv()</code> in this case. Inside the brackets, you specify the parameters that the function needs. Each parameter has a name and a value, e.g., <code>file = &quot;teamdata.csv&quot;</code>. The assignment operator, the left arrow <code>&lt;-</code>, is used to store the result of the command, a complete data frame in this case, into an object of an arbitrary name, <code>teamdata</code> in this case. This object resides in the workspace and can be used for further operations until it is deleted or R is quit. To learn which parameters a function needs, open its help page by typing <code>?</code> followed by the function name, e.g.,</p>
+<pre><code>?read.csv()</code></pre>
+
+<h2 id="preparing-the-data-set-for-calculating-faultline-measures">5.3 Preparing the data set for calculating faultline measures</h2>
+<p>After the successful import of your data, the R workspace now contains a data frame object <code>teamdata</code> that contains the entire data set, i.e., all variables and all cases. You can display the names of the variables included in the data set by calling</p>
+<pre><code>names(teamdata)</code></pre>
+<p>The first few cases of the data set are displayed by calling</p>
+<pre><code>head(teamdata)</code></pre>
+<p>The entire data frame is printed into the console by calling its name:</p>
+<pre><code>teamdata</code></pre>
+<p>An SPSS-like table view of the data frame is also available:</p>
+<pre><code>fix(teamdata)</code></pre>
+<p>This table view of the data must be closed before R accepts further commands.</p>
+<p>If your data set contains more variables than those required for the calculation of faultlines, you need to create a subset of the data set that only holds the diversity attributes that you want to use for the faultline, plus a team number variable. To create a new data frame in the R workspace called <code>teamdata_sub</code> that only contains the variables <code>teamid, age, gender,</code> and <code>ethnicity</code>, execute the following command:</p>
+<pre><code>teamdata_sub &lt;- teamdata[,c(&quot;teamid&quot;, &quot;age&quot;, &quot;gender&quot;, &quot;ethnicity&quot;)]</code></pre>
+<p>Faultlines cannot be calculated for missing data. Thus, prior to calculating faultlines, you need to remove all team members with missing values in the diversity attributes from the dataset. This can be achieved with the following command that assumes that your data frame is called <code>teamdata_sub</code>:</p>
+<pre><code>teamdata_sub &lt;- teamdata_sub[complete.cases(teamdata_sub),]</code></pre>
+<p>Now that the data frame only contains the diversity attributes that are intended for the calculation of the faultline, a variable denoting team membership (<code>teamid</code> in this example), and no missing values, you are ready to calculate diversity faultlines.</p>
+
+
+<h1 id="calculating-diversity-faultlines-with-the-faultlines-function"><a name="examples">6. Calculating diversity faultlines with the<br />faultlines() function</a></h1>
+<p>This section assumes that you have successfully <a href="#install">installed and activated</a> the <code>asw.cluster</code> package and that you have a data frame <code>teamdata_sub</code> in your R workspace that has been prepared according to the guidelines provided <a href="#import">above</a> .</p>
+<p>As a first step, read the help page for the <code>faultlines()</code> function by calling <code>?faultlines()</code>. The Details&#x0027 section of the help page explains the principles of the function:</p>
+<p>The function is run over a data set (a data frame passed to the function with the parameter <code>data</code>, (e.g., <code>data = teamdata_sub</code>) containing the members of one or more teams as rows and their diversity attributes that are used for calculating a given faultline measure as columns. Note that all columns will be used for calculating the faultline. Thus, this will most likely be a subset of the &#x0027full&#x0027 data frame that was gathered in a given research. If the data set contains more than one team, it must contain a column that specifies a team number for each team member, thus indicating team membership. The name of this column must be passed to the argument <code>group.par</code>.</p>
+<p>For each diversity attribute contained in the data frame, the user must specify its scale (either numeric or nominal) in the same order of the variables in the data frame as a character vector and pass it to the function with the parameter <code>attr.type</code>. For example, if the data set contains the variables age (numeric in years), ethnicity (character factor), and gender (character factor), this parameter must be specified as<br /><code>attr.type = c(&quot;numeric&quot;, &quot;nominal&quot;, &quot;nominal&quot;)</code>. </p>
+<p>Note that the faultline measures proposed by Shaw (2004) and Trezzini (2008) require that all attributes are nominal. Thus, prior to calculating diversity faultline strengths with these two methods, you must recode numeric attributes such as age to factors with levels such as &#x0027young&#x0027, &#x0027middle-aged&#x0027, and &#x0027old&#x0027 and specify the attribute type of this variable as nominal.</p>
+<p>If you wish to calculate one of the diversity faultline measures <code>&quot;thatcher&quot;</code>, <code>&quot;bezrukova&quot;</code>, or <code>&quot;asw&quot;</code> that are capable of dealing with numeric attributes such as age or tenure, you must specify a weight for each diversity attribute with the <code>attr.weight</code> parameter. These weights indicate how strong a difference of 1 (in case of numeric attributes) or a different category (in case of nominal attributes) is fractured into the faultline. In the example case of age (in years), gender, and ethnicity, specifying this parameter as <code>attr.weight = c(0.1, 1, 1)</code> means that an age difference of ten years is equally weighted as a difference in gender, which is equally weighted as a difference in ethnicity. Note that these are the default values for Thatcher&#x0027s et al. (2003) <span class="math"><em>F</em><em>a</em><em>u</em></span> that are probably used in most papers, but these appear to be arbitrary. More research is required with regard to the choice of these weights in a given context. Note that <code>rescale</code> combines with the <code>attr.weight</code>-parameter, which means that numeric attributes are first rescaled according to the rescale-parameter. In a second step, all attributes (dummy- coded values for nominal attributes) are multiplied by their appropriate weight given by the <code>attr.weight</code>-parameter.</p>
+<p>The <code>metric</code> parameter lets you specify whether Euclidean or Mahalanobis distances should be employed in determining how different team members are from each other. This metric is only employed by the methods <code>&quot;thatcher&quot;</code>, <code>&quot;bezrukova&quot;</code>, and <code>&quot;asw&quot;</code>. 
+Note that the former two methods (Bezrukova et al., 2009; Thatcher et al., 2003) were introduced based on Euclidean distances, which assume that diversity attributes are uncorrelated. Meyer and Glenz (2013) showed that correlations between diversity attributes (e.g., between age and tenure) can have a significant influence on diversity faultline measures. They thus suggested to employ Mahalanobis distances to control for such correlations. They explicitly included this option in the calculation of the ASW measure, but invoking it for Thatcher&#x0027s et al. <span class="math"><em>F</em><em>a</em><em>u</em></span> or for Bezrukova&#x0027s Faultline Distance measure is purely experimental. Employing Mahalanobis distances for the latter two measures will thus deliver a measure that has not been described in the literature. Furthermore, calculating Mahalanobis distances requires an inversion of the variance-covariance-martix of attributes. Using Mahalanobis metrics is therefore restricted to data sets with invertible variance-/covariance matrices, i.e., to numeric attributes only.</p>
+<h2 id="asw-cluster-faultlines-for-multiple-subgroups">6.1 ASW cluster faultlines for multiple subgroups</h2>
+<p id="asw">As Meyer and Glenz (2013) illustrated, the ASW measure is the only diversity faultline measure that is suitable for the case where more than two homogeneous subgroups are possible. In the following, we illustrate how to calculate ASW for an example data set <code>teamdata_sub</code>. It consists of two teams with six members each. For each team member, age, gender, and ethnicity have been collected. The data set can be created by executing the following syntax:</p>
+<pre><code>teamdata_sub &lt;- data.frame(teamid = c(rep(1,6),rep(2,6)), 
+  age = c(44,18,40,33,33,50,22,23,39,42,57,51), 
+  gender = c(&quot;f&quot;,&quot;m&quot;,&quot;f&quot;,&quot;f&quot;,&quot;m&quot;,&quot;f&quot;,&quot;f&quot;,&quot;f&quot;,&quot;m&quot;,&quot;m&quot;,&quot;m&quot;,&quot;m&quot;), 
+  ethnicity = c(&quot;A&quot;,&quot;B&quot;,&quot;A&quot;,&quot;D&quot;,&quot;C&quot;,&quot;B&quot;,&quot;A&quot;,&quot;A&quot;,&quot;B&quot;,&quot;B&quot;,&quot;C&quot;,&quot;C&quot;))</code></pre>
+<p>Executing the name of the data frame prints its content to the console:</p>
+<pre><code>teamdata_sub
+
+   teamid age gender ethnicity
+1       1  44      f         A
+2       1  18      m         B
+3       1  40      f         A
+4       1  33      f         D
+5       1  33      m         C
+6       1  50      f         B
+7       2  22      f         A
+8       2  23      f         A
+9       2  39      m         B
+10      2  42      m         B
+11      2  57      m         C
+12      2  51      m         C</code></pre>
+<p>The first team appears to be rather heterogeneous and cross-cut, but the second team appears to consist of three rather homogeneous subgroups. To calculate the ASW faultline measure for both teams, we need to specify the scales of the diversity attributes age, gender, and ethnicity as being numeric, nominal, and nominal. Instead of specifying the scale types in the call to the <code>faultlines()</code> function, they can also be stored in a variable that can be passed to the function:</p>
+<pre><code>my_attr &lt;- c(&quot;numeric&quot;, &quot;nominal&quot;, &quot;nominal&quot;)</code></pre>
+<p>The ASW faultline algorithm also needs to know how to weight the attributes, i.e., how much age difference is seen as equivalent to a difference in gender or ethnicity. Following the example in the introduction of this section, these can be stored in a variable as well:</p>
+<pre><code>my_weights &lt;- c(0.1, 1, 1)</code></pre>
+<p>After these considerations have been made, the faultlines can be calculated with the results being stored in a data frame that we call <code>my_ASW</code>. Note how in the call to the <code>faultline()</code> function, the name of the data frame containing the demographic information and the name of the variable in that data frame specifying team membership are also passed as parameters:</p>
+<pre><code>my_ASW &lt;- faultlines(data = teamdata_sub, 
+                     group.par = &quot;teamid&quot;, 
+                     attr.type = my_attr, 
+                     attr.weight = my_weights,
+                     method = &quot;asw&quot;)</code></pre>
+<p>Calling the <code>my_ASW</code> object reveals its content:</p>
+<pre><code>my_ASW
+
+#   team  fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 0.3317999 1, 2, 1, 2, 2, 1                   2            3 3
+# 2    2 0.8054895 1, 1, 2, 2, 3, 3                   3          2 3 3  </code></pre>
+<p>In the resulting data frame, each line represents a team. The first column denotes the team number and the second, <code>fl.value</code>, denotes the faultline measure for the given group (the ASW value). The column <code>mbr_to_subgroups</code> shows to which subgroup each member belongs. Members are listed left-to right with reference to the top-to-bottom order of the data frame containing the raw data. The column <code>number_of_subgroups</code> indicates how many subgroups the algorithm detected id the given team, and the last column lists the sizes of the subgroups.</p>
+
+<p>The result can be <a href="#convert">converted</a> into a format where each row represents a team member. Regardless of its format, it can be <a href="#export">exported</a> for use in other applications such as SPSS.</p>
+
+<p>A longer and more detailed report of the results can be obtained by calling the function <code>summary()</code> with the result object as parameter:</p>
+
+<pre><code>
+summary(my_ASW)
+# Number of Teams: 2
+#
+# Calculation features:
+# Method: ASW
+# Level:  team
+# Metric: euclid
+#
+#
+# Team 1 (1):
+# ===========
+# Faultline Strength:
+# [1] 0.3317999
+#
+# Member to Subgroup Association:
+# [1] 1 2 1 2 2 1
+#
+# Number of Subgroups:
+# [1] 2
+#
+#
+# Team 2 (2):
+# ===========
+# Faultline Strength:
+# [1] 0.8054895
+#
+# Member to Subgroup Association:
+# [1] 1 1 2 2 3 3
+#
+# Number of Subgroups:
+# [1] 3
+</code></pre>
+
+<h3 id="scaling-attributes">6.1.1 Scaling attributes</h3>
+To circumvent the issue of assigning arbitrary weights (e.g., a difference in ten years of
+age equals a difference in gender) to diversity attributes, Bezrukova et al. (2009) recom-
+mended to scale numeric attributes by their standard deviation, and to dummy code nominal
+attributes with 0 and 1/&radic;2. The latter results in an Euclidean distance of one between nominal attributes. This scaling is used by default in all papers employing the <em>Fau * Dist </em> faultline measure, and we also recommend to employ this scaling when calculating ASW faultlines. The application of this scaling is illustrated in the following example:
+
+<pre><code>
+my_ASW_sc <- faultlines(data = teamdata_sub,
+                               group.par = "teamid",
+                               attr.type = my_attr,
+                               rescale = "sd",
+                               method = "asw")</code></pre>
+<p>Note how the use of scaling makes the specification of weights unnecessary. The scaling of attributes leads to different results, as can be seen by calling the resulting object:
+
+<pre><code>
+my_ASW_sc
+#   team          fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 0.337558681138197      1 2 1 1 2 1                   2            4 2
+# 2    2 0.821859114925443      1 1 2 2 3 3                   3          2 2 2
+</code></pre>
+
+<h3 id="controlling-for-correlated-attributes">6.1.2 Controlling for correlated attributes</h3>
+<p>One special feature of ASW faultlines is that you can control for the correlation between numeric attributes when calculating the faultline. For example, if you want to calculate faultlines for the attributes age and tenure, which tend to be correlated as in the following example:</p>
+<pre><code>mynumericdata &lt;- data.frame(teamid = c(rep(1,6),rep(2,6)), 
+                     age = c(44,18,40,33,33,50,22,23,39,42,57,51), 
+                     tenure = c(12,2.5,11,3,5,5,2,1,12,13,20,22))
+
+mynumericdata
+#    teamid age tenure
+# 1       1  44   12.0
+# 2       1  18    2.5
+# 3       1  40   11.0
+# 4       1  33    3.0
+# 5       1  33    5.0
+# 6       1  50    5.0
+# 7       2  22    2.0
+# 8       2  23    1.0
+# 9       2  39   12.0
+# 10      2  42   13.0
+# 11      2  57   20.0
+# 12      2  51   22.0
+
+with(mynumericdata, cor.test(age, tenure))
+
+#   Pearson&#39;s product-moment correlation
+# 
+# data:  age and tenure 
+# t = 4.5062, df = 10, p-value = 0.001132
+# alternative hypothesis: true correlation is not equal to 0 
+# 95 percent confidence interval:
+#  0.4614055 0.9473970 
+# sample estimates:
+#       cor 
+# 0.8185531 </code></pre>
+<p>If one calculates ASW faultlines with the standard settings, ASW will assume that the two attributes are uncorrelated and will return a stronger faultline value for the second team than for the first team:</p>
+<pre><code>my_num_attr &lt;- c(&quot;numeric&quot;, &quot;numeric&quot;) 
+my_num_weights &lt;- c(1,1)
+
+my_ASW &lt;- faultlines(data = mynumericdata, 
+                            group.par = &quot;teamid&quot;, 
+                            attr.type = my_num_attr, 
+                            attr.weight = my_num_weights, 
+                            method = &quot;asw&quot;)
+my_ASW
+
+#   team  fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 0.4680569 1, 2, 1, 2, 2, 1                   2            3 3
+# 2    2 0.7792994 1, 1, 2, 2, 3, 3                   3          2 2 2</code></pre>
+<p>However, the tenure of the members of the second team is pretty much in line with what one would expect given their age; only the team member whose age is 57 has a lower tenure than her college with 51. So there is actually a difference between the last two group members because for one of them, the tenure is not what one would expect given its strong correlation with age. Therefore, controlling for the correlation by employing the Mahalanobis metric in determining how similar people are, leads to a different solution:</p>
+<pre><code>my_ASW_m &lt;- faultlines(data = mynumericdata, 
+                       group.par = &quot;teamid&quot;, 
+                       attr.type = my_num_attr, 
+                       attr.weight = my_num_weights, 
+                       method = &quot;asw&quot;, 
+                       metric = &quot;mahal&quot;)
+my_ASW_m
+
+#   team  fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 0.4653479 1, 2, 1, 3, 3, 4                   4        2 1 2 1
+# 2    2 0.3383156 1, 1, 2, 2, 3, 4                   4        2 2 1 1</code></pre>
+<p>This solution is drastically different from the previous one: The number of subgroups changes and the second team now has a weaker faultline than the first team, whereas in the previous case, it was the other way around. This example illustrates the considerations that have to be made if diversity attributes are correlated.</p>
+
+
+<h3 id="ego-faultlines">6.1.3 Ego-Faultlines</h3>
+<p>Version 2.0 of the <code>asw.cluster</code> package introduces a new option to determinate faultlines on the level of individual group members. As the classic conceptualization of faultlines takes a birds-eye perspective on latent subgroups in a team, by maximizing the silhouette width measures of its members on average, the member to subgroup classification may not correspons to every single memeber’s individual perspective on the group. Determining Ego-Faultlines with the <code>faultlines()</code>-function means to take the individual in- and outgroup perspective of every single member by maximizing his/her partiular silhouette width. This is done for every group member, which means that the result consist of as many faultlines
+(i.e. subgroup partitions and faultline strength values) as there are members in the group. These faultlines can be congruent, but typically different individual perspectives lead to different faultlines. The <code>faultline()</code>-function calculates the individual-level faultline strength and the individual member to subgroup association, as well as an aggregated measure of individual faultline strengths on the team-level.
+All results are recalled by the <code>summary()</code>-function.:</p>
+
+<pre><code>my_ego_ASW &lt;- faultlines(data = mynumericdata,
+                          group.par = &quot;teamid&quot;,
+                          i.level = TRUE,
+                          attr.type = my_num_attr,
+                          method = &quot;asw&quot;)
+    summary(my_ego_ASW)
+    
+    Number of Teams: 2
+    
+    Calculation features:
+       Method:   ASW
+       Level:    individual
+       Metric:   euclid
+
+    
+    
+    Team 1 (1):
+    ===========
+    Faultline Strength:
+    [1] 0.5530582
+    
+    
+    Individual Faultline Strengths (silhouette widths):
+    [1] 0.7051077 0.3681231 0.6794982 0.3933564 0.4917633 0.6805004
+    
+    
+    Member to Subgroup Association:
+         X1      X2      X3      X4      X5      X6
+    1121222 2212212 3121111 4121111 5111112 6122221
+ 
+ 
+    Number of Subgroups:
+    [1] 2 2 2 2 2 2
+  
+  
+  Subgroup Network:
+             X1        X2        X3        X4        X5        X6
+    1 1.0000000 0.1666667 0.8333333 0.6666667 0.5000000 0.6666667
+    2 0.1666667 1.0000000 0.3333333 0.5000000 0.6666667 0.1666667
+    3 0.8333333 0.3333333 1.0000000 0.8333333 0.6666667 0.5000000
+    4 0.6666667 0.5000000 0.8333333 1.0000000 0.8333333 0.6666667
+    5 0.5000000 0.6666667 0.6666667 0.8333333 1.0000000 0.5000000
+    6 0.6666667 0.1666667 0.5000000 0.6666667 0.5000000 1.0000000
+
+  
+  
+    Distances:
+             X1       X2        X3        X4        X5        X6
+    1  0.000000 26.03843  4.000000 11.045361 11.090537  6.082763
+    2 26.038433  0.00000 22.045408 15.066519 15.033296 32.015621
+    3  4.000000 22.04541  0.000000  7.071068  7.141428 10.049876
+    4 11.045361 15.06652  7.071068  0.000000  1.414214 17.029386
+    5 11.090537 15.03330  7.141428  1.414214  0.000000 17.058722
+    6  6.082763 32.01562 10.049876 17.029386 17.058722  0.000000
+  
+  
+  
+    Team 2 (2):
+    ===========
+    Faultline Strength:
+    [1] 0.8329077
+   
+   
+   Individual Faultline Strengths (silhouette widths):
+    [1] 0.9604632 0.9588393 0.8100979 0.8101001 0.7649801 0.6929656
+  
+  
+    Member to Subgroup Association:
+         X1      X2      X3      X4      X5      X6
+    1112222 2112222 3221122 4221122 5222211 6222211
+  
+  
+   Number of Subgroups:
+    [1] 2 2 2 2 2 2
+   
+   
+   Subgroup Network:
+             X1        X2        X3        X4        X5        X6
+    1 1.0000000 1.0000000 0.3333333 0.3333333 0.3333333 0.3333333
+    2 1.0000000 1.0000000 0.3333333 0.3333333 0.3333333 0.3333333
+    3 0.3333333 0.3333333 1.0000000 1.0000000 0.3333333 0.3333333
+    4 0.3333333 0.3333333 1.0000000 1.0000000 0.3333333 0.3333333
+    5 0.3333333 0.3333333 0.3333333 0.3333333 1.0000000 1.0000000
+    6 0.3333333 0.3333333 0.3333333 0.3333333 1.0000000 1.0000000
+   
+   
+   Distances:
+            X1       X2       X3        X4       X5        X6
+    1  0.00000  1.00000 17.05872 20.049938 35.02856 29.034462
+    2  1.00000  0.00000 16.06238 19.052559 34.02940 28.035692
+    3 17.05872 16.06238  0.00000  3.000000 18.02776 12.041595
+    4 20.04994 19.05256  3.00000  0.000000 15.03330  9.055385
+    5 35.02856 34.02940 18.02776 15.033296  0.00000  6.000000
+    6 29.03446 28.03569 12.04159  9.055385  6.00000  0.000000</code></pre>
+
+
+
+<h2 id="fau">6.2 <span class="math"><em>F</em><em>a</em><em>u</em></span> <span class="citation"></span> (Thatcher et al. 2003)</h2>
+<p><span class="math"><em>F</em><em>a</em><em>u</em></span> by Thatcher et al. (2003) <span class="citation"></span> assumes the existence of two homogeneous subgroups. In the following, we show how to calculate it for the example data set introduced in Section [asw].</p>
+<p>As with ASW faultlines, you need to specify the scales of the diversity attributes age, gender, and ethnicity as being numeric, nominal, and nominal. Instead of specifying the scale types in the call to the <code>faultlines()</code> function, they can also be stored in a variable that can be passed to the function:</p>
+<pre><code>my_attr &lt;- c(&quot;numeric&quot;, &quot;nominal&quot;, &quot;nominal&quot;)</code></pre>
+<p>The <span class="math"><em>F</em><em>a</em><em>u</em></span> faultline algorithm also needs to know how to weigh the attributes, i.e., how much age difference is seen as equivalent to a difference in gender or ethnicity. Following the example in the introduction of this section, these can be stored in a variable as well:</p>
+<pre><code>my_weights &lt;- c(0.1, 1, 1)</code></pre>
+<p>After these considerations have been made, the faultlines can be calculated with the results being stored in a data frame that we call <code>my_Fau</code>. Note how in the call to the <code>faultline()</code> function, the name of the data frame and the name of the variable in the data frame specifying team membership are also passed as parameters:</p>
+<pre><code>my_Fau &lt;- faultlines(data = teamdata_sub, 
+                     group.par = &quot;teamid&quot;, 
+                     attr.type = my_attr, 
+                     attr.weight = my_weights,
+                     method = &quot;thatcher&quot;)</code></pre>
+<p>Calling the <code>my_Fau</code> object reveals its content:</p>
+<pre><code>my_Fau
+#   team  fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 0.5513439 1, 2, 1, 2, 2, 1                   2            3 3
+# 2    2 0.7747787 1, 1, 2, 2, 2, 2                   2            2 4</code></pre>
+<p>In the resulting data frame, each line represents a team as in the ASW example above. The first column denotes the team number and the second, <code>fl.value</code>, its faultline measure (the <span class="math"><em>F</em><em>a</em><em>u</em></span> value). The column <code>mbr_to_subgroups</code> shows to which subgroup each member belongs. Members are listed left-to right with reference to the top-to-bottom order of the data frame containing the raw data. The column <code>number_of_subgroups</code> indicates how many subgroups the algorithm detected id the given team, and the last column lists the sizes of the subgroups. Note that when calculating <span class="math"><em>F</em><em>a</em><em>u</em></span>, the number of subgroups is always fixed to 2. See also how the <span class="math"><em>F</em><em>a</em><em>u</em></span> values differ from the ASW values in Section [asw] and how the ASW method and <span class="math"><em>F</em><em>a</em><em>u</em></span> diverge with regard to the number of subgroups for team 2.</p>
+
+<p>The result can be <a href="#convert">converted</a> into a format where each row represents a team member. Regardless of its format, it can be <a href="#export">exported</a> for use in other applications such as SPSS.</p>
+
+<h2 id="faultline-strength-faultline-distance">6.3 Faultline Strength * Faultline Distance<span class="citation"></span> (Bezrukova et al., 2009)</h2>
+<p><span class="citation"></span> Bezrukova et al., (2009) suggested to multiply Thatcher&#x0027s <span class="math"><em>F</em><em>a</em><em>u</em></span> for a given group with the Euclidean distance between the two subgroup centroids<sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup>. To calculate this product score of faultline strength and euclidean distance, the <code>faultlines()</code> function has to be invoked with the <code>method = &quot;bezrukova&quot;</code> option. In the following, we show how to calculate this measure for the example data set introduced in Section [asw].</p>
+<p>As with ASW faultlines, you need to specify the scales of the diversity attributes age, gender, and ethnicity as being numeric, nominal, and nominal. Instead of specifying the scale types in the call to the <code>faultlines()</code> function, they can also be stored in a variable that can be passed to the function:</p>
+<pre><code>my_attr &lt;- c(&quot;numeric&quot;, &quot;nominal&quot;, &quot;nominal&quot;)</code></pre>
+<p>The <span class="math"><em>F</em><em>a</em><em>u</em></span> faultline strength that is multiplied with the Euclidean distance between the two subgroups when invoking the <code>method = &quot;bezrukova&quot;</code> option also needs to know how to weight the attributes, i.e., how much age difference is seen as equivalent to a difference in gender or ethnicity. Following the arguments presented by Zanutto, Bezrukova, and Jehn (2010), numeric attributes should be scaled by their standard deviations and nominal attributes should be scaled by 1/&radic;2. This is achieved by invoking the <code>rescale = "sd"</code> parameter. </p>
+
+<p>After these considerations have been made, the faultlines can be calculated with the results being stored in a data frame that we call <code>my_bezrukova</code>. Note how in the call to the <code>faultline()</code> function, the name of the data frame and the name of the variable in the data frame specifying team membership are also passed as parameters:</p>
+<pre><code>my_bezrukova &lt;- faultlines(data = teamdata_sub, 
+                group.par = &quot;teamid&quot;, 
+                attr.type = my_attr, 
+                attr.weight = my_weights, 
+                method = &quot;bezrukova&quot;)</code></pre>
+<p>Calling the <code>my_bezrukova</code> object reveals its content:</p>
+<pre><code>my_bezrukova
+    
+#   team fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 9.201921 1, 2, 1, 2, 2, 1                   2            4 2
+# 2    2 19.20314 1, 1, 2, 2, 2, 2                   2            2 4</code></pre>
+<p>In the resulting data frame, each line represents a team as in the ASW example above. The first column denotes the team number and the second, <code>fl.value</code>, its faultline strength. The column <code>mbr_to_subgroups</code> shows to which subgroup each member belongs. Members are listed left-to right with reference to the top-to-bottom order of the data frame containing the raw data. The column <code>number_of_subgroups</code> indicates how many subgroups the algorithm detected in the given team, and the last column lists the subgroup sizes. Note that when calculating the Faultline Strength * Faultline Distance measure, the number of subgroups is always fixed to 2. Also note how the multiplication of the Fau value with the Euclidean distance results in a value that is no longer in the range between 0 and 1.</p>
+
+<p>The result can be <a href="#convert">converted</a> into a format where each row represents a team member. Regardless of its format, it can be <a href="#export">exported</a> for use in other applications such as SPSS.</p>
+
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn2"><p>Meyer and Glenz (2013) show that faultline strength and faultline distance are related. Therefore, the multiplication of the faultline strength with the faultline distance does not add new information to the measure.</p></li>
+</ol>
+</div>
+
+
+<h2 id="multiple-correlations">6.4 Multiple correlations (van Knippenberg et al., 2011)<span class="citation"></span></h2>
+<p>The measure by van Knippenberg et al. (2011) <span class="citation"></span> operationalizes diversity faultlines through the multiple correlation between diversity attributes. It does not deliver the number of subgroups, nor a member-to-subgroup association. As with ASW faultlines, you need to specify the scales of the diversity attributes (e.g., age, gender, and ethnicity) in terms of whether they are numeric or nominal. </p>
+<pre><code>my_attr &lt;- c(&quot;numeric&quot;, &quot;nominal&quot;, &quot;nominal&quot;)</code></pre>
+<p>In contrast to the previous measures, the measure by van Knippenberg et al. (2011)<span class="citation"></span> does not support the weighting of attributes and therefore, no weighting variable is required. The measure can be calculated by calling the <code>faultlines()</code> function with the parameter <code>method = &quot;knippenberg&quot;</code> with the following syntax, which stores the resulting table in an object that we name <code>my_knippenberg</code>:</p>
+<pre><code>my_knippenberg &lt;- faultlines(data = teamdata_sub, 
+                             group.par = &quot;teamid&quot;, 
+                             attr.type = my_attr, 
+                             method = &quot;knippenberg&quot;)</code></pre>
+<p>Calling the <code>my_knippenberg</code> object reveals its content:</p>
+<pre><code>my_knippenberg
+
+#   team   fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 0.03742422               NA                  NA             NA
+# 2    2  0.7664761               NA                  NA             NA</code></pre>
+<p>Note that the values for the number of subgroups and for the member-to-subgroup association are missing (<code>NA</code> &#x002D short for &#x0027not available&#x0027 &#x002D is R&#x0027s notation for missing values), because the method is not capable of delivering this information.</p>
+
+<p>The result can be <a href="#convert">converted</a> into a format where each row represents a team member. Regardless of its format, it can be <a href="#export">exported</a> for use in other applications such as SPSS.</p>
+
+
+
+
+<h2 id="subgroup-strength">6.5 Subgroup Strength (Gibson &amp; Vermeulen, 2003)<span class="citation"></span></h2>
+<p>The measure by Gibson &amp; Vermeulen (2003) <span class="citation"></span> quantifies the extent to which attributes overlap between the dyads that can be formed between all members of a team. Although <span class="citation"></span> address a latent subgroup-separation, their method does not reveal the boundaries of those subgroups, i.e. the member-to-subgroup association, nor does it provide an estimation of the number of subgroups. A notable feature is the method&#x0027s ability to weigh the differences between team members with regard to the scale of the attributes.</p>
+<p>For calculating Subgroup Strength, you also need to specify the scales of the diversity attributes (e.g., age, gender, and ethnicity) in terms of whether they are numeric or nominal. Instead of specifying the scale types in the call to the <code>faultlines()</code> function, they can also be stored in a variable that can be passed to the function:</p>
+<pre><code>my_attr &lt;- c(&quot;numeric&quot;, &quot;nominal&quot;, &quot;nominal&quot;)</code></pre>
+<p>As the measure by <span class="citation"></span> does not support the weighting of attributes, no weighting variable is required. The measure can be calculated by calling the <code>faultlines()</code> function with the parameter <code>method = &quot;gibson&quot;</code> with the following syntax, which stores the resulting table in an object that we name <code>my_gibson</code>:</p>
+<pre><code>my_gibson &lt;- faultlines(data = teamdata_sub, 
+                        group.par = &quot;teamid&quot;, 
+                        attr.type = my_attr, 
+                        method = &quot;gibson&quot;)</code></pre>
+<p>Calling the <code>my_gibson</code> object reveals its content:</p>
+<pre><code>my_gibson
+#   team   fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 0.7050475               NA                  NA              NA
+# 2    2  1.003377               NA                  NA              NA</code></pre>
+<p>Note that the values for the number of subgroups and for the member-to-subgroup association are missing (<code>NA</code> &#x002D short for &#x0027not available&#x0027 &#x002D is R&#x0027s notation for missing values), because the method is not capable of delivering this information. Note also how the values returned by this function are not restricted to the range of 0 to 1.</p>
+
+<p>The result can be <a href="#convert">converted</a> into a format where each row represents a team member. Regardless of its format, it can be <a href="#export">exported</a> for use in other applications such as SPSS.</p>
+
+<h2 id="fls">6.6 <span class="math"><em>F</em><em>L</em><em>S</em></span> (Shaw, 2004) <span class="citation"></span></h2>
+<p><span class="citation"></span> Shaw (2004) measures the extent to which categorial attributes are aligned within subgroups, and deviate between subgroups. Thus, the measure is only suitable for categorical data and is thus not suitable for the example data set employed so far in this manual, because it contains a numeric variable for age. Thus, if you want to calculate Shaw&#x0027s <span class="math"><em>F</em><em>L</em><em>S</em></span>, such data needs to be recoded to nominal scale, e.g. by employing categories for certain age ranges. The following code produces another data set that is based on the previous example but categorized the age variable:</p>
+<pre><code>mycategorialdata &lt;- data.frame(teamid = c(rep(1,6),rep(2,6)), 
+age = c(&quot;40 to 50&quot;,&quot;18 to 25&quot;,&quot;40 to 49&quot;,&quot;30 to 39&quot;,&quot;30 to 39&quot;,
+        &quot;50 to 59&quot;,&quot;18 to 25&quot;, &quot;18 to 25&quot;,&quot;30 to 39&quot;,
+        &quot;40 to 49&quot;, &quot;50 to 59&quot;,&quot;50 to 59&quot;), 
+gender = c(&quot;f&quot;,&quot;m&quot;,&quot;f&quot;,&quot;f&quot;,&quot;m&quot;,&quot;f&quot;,&quot;f&quot;,&quot;f&quot;,&quot;m&quot;,&quot;m&quot;,&quot;m&quot;,&quot;m&quot;), 
+ethnicity = c(&quot;A&quot;,&quot;B&quot;,&quot;A&quot;,&quot;D&quot;,&quot;C&quot;,&quot;B&quot;,&quot;A&quot;,&quot;A&quot;,&quot;B&quot;,&quot;B&quot;,&quot;C&quot;,&quot;C&quot;))</code></pre>
+<p>Executing its name prints the data frame to the console:</p>
+<pre><code>mycategorialdata
+
+#    teamid      age gender ethnicity
+# 1       1 40 to 50      f         A
+# 2       1 18 to 25      m         B
+# 3       1 40 to 49      f         A
+# 4       1 30 to 39      f         D
+# 5       1 30 to 39      m         C
+# 6       1 50 to 59      f         B
+# 7       2 18 to 25      f         A
+# 8       2 18 to 25      f         A
+# 9       2 30 to 39      m         B
+# 10      2 40 to 49      m         B
+# 11      2 50 to 59      m         C
+# 12      2 50 to 59      m         C</code></pre>
+<p>For calculating <span class="math"><em>F</em><em>L</em><em>S</em></span>, you also need to specify the scales of the diversity attributes, but they all have to be set to nominal:</p>
+<pre><code>my_cat_attr &lt;- c(&quot;nominal&quot;, &quot;nominal&quot;, &quot;nominal&quot;)</code></pre>
+<p>Subsequently, FLS can be calculated by executing the following syntax that stores the result in an object called <code>my_FLS</code>:</p>
+<pre><code>my_FLS &lt;- faultlines(data = mycategorialdata, 
+                     group.par = &quot;teamid&quot;, 
+                     attr.type = my_cat_attr, 
+                     method = &quot;shaw&quot;)</code></pre>
+<p>Calling the <code>my_FLS</code> object reveals its content:</p>
+<pre><code>my_FLS
+
+#   team   fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1  0.0546875               NA                  NA             NA
+# 2    2  0.6032051               NA                  NA             NA</code></pre>
+<p>Note that the values for the number of subgroups and for the member-to-subgroup association are missing (<code>NA</code> &#x002D short for &#x0027not available&#x0027 &#x002D is R&#x0027s notation for missing values), because the method is not capable of delivering this information.</p>
+
+<p>The result can be <a href="#convert">converted</a> into a format where each row represents a team member. Regardless of its format, it can be <a href="#export">exported</a> for use in other applications such as SPSS.</p>
+
+<h2 id="pmd_cat">6.7 <span class="math"><em>P</em><em>M</em><em>D</em><sub><em>c</em><em>a</em><em>t</em></sub></span> (Trezzini, 2008)<span class="citation"></span></h2>
+<p><span class="citation"></span> Trezzini (2008) operationalized faultline strength as the degree of polarized multi-dimensional subgroup diversity for categorial attributes. Thus, the measure is only suitable for categorical data. Therefore, in its illustration, we will use the <code>mycategorialdata</code> data frame created in Section <a href="manual.htm#fls" target="manual">6.6 <span class="math"><em>F</em><em>L</em><em>S</em></span> </a>. For calculating <span class="math"><em>P</em><em>M</em><em>D</em><sub><em>c</em><em>a</em><em>t</em></sub></span>, you also need to specify the scales of the diversity attributes, but they all have to be set to nominal. As the data set contains the nominal information for age, gender, and ethnicity, we specify an according variable:</p>
+<pre><code>my_cat_attr &lt;- c(&quot;nominal&quot;, &quot;nominal&quot;, &quot;nominal&quot;)</code></pre>
+<p>Subsequently, <span class="math"><em>P</em><em>M</em><em>D</em><sub><em>c</em><em>a</em><em>t</em></sub></span> can be calculated by executing the following syntax that stores the result in an object called <code>my_PMD</code>:</p>
+<pre><code>my_PMD &lt;- faultlines(data = mycategorialdata, 
+                     group.par = &quot;teamid&quot;, 
+                     attr.type = my_cat_attr, 
+                     method = &quot;trezzini&quot;)</code></pre>
+<p>Calling the <code>my_PMD</code> object reveals its content:</p>
+<pre><code>my_PMD
+#   team   fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1  0.2160494               NA                  NA             NA
+# 2    2  0.3395062               NA                  NA             NA</code></pre>
+
+<p>The result can be <a href="#convert">converted</a> into a format where each row represents a team member. Regardless of its format, it can be <a href="#export">exported</a>  for use in other applications such as SPSS.</p>
+
+<h2 id="lcc a">6.8 Faultlines based on Latent Class Cluster Analysis (Lawrence &amp; Zyphur, 2011)<span class="citation"></span></h2>
+
+<p>Lawrence and Zyphur (2011) proposed latent class cluster analysis (LCCA), also referred to as latent class analysis (LCA), for identifying faultlines in a stepwise way. First, several latent class solutions with different clusters are obtained over the data of a given team, where the clusters represent the subgroups. Out of these possible latent cluster solutions, the best-fitting one is identified by the lowest Bayesian information criterion (BIC) value. Each team member is then assigned to a subgroup based on the posterior probabilities for a given individual to belong to a certain class. As high posterior probabilities are likely in the case of homogeneous clusters, the homogeneity of posterior probabilities of all group members, which is determined with the entropy measure, can be employed as a measure of faultline strength.</p>
+<p>As Meyer and Glenz (2013) show, this measure has certain practical limitations when applied to small group data. Its largest limitation lies in its insensitivity to different levels of homogeneity. It is biased towards strong faultlines and often fails to converge for very homogeneous small subgroups. Its usefulness for small group data is therefore questionable.</p>
+<p>LCCA-based faultlines can be calculated by invoking the method = "lcca" parameter. They do not require a scaling of attributes:</p>
+
+<pre><code>
+my_attr <- c("numeric", "nominal", "nominal")
+
+my_lcca <- faultlines(data = teamdata_sub,
+                             group.par = "teamid",
+                             attr.type = my_attr,
+                             method = "lcca")</code></pre>
+
+<p>Calling the resulting object reveals its content:</p>
+<pre><code>
+my_lcca
+
+#   team fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes 
+# 1    1       NA               NA                  NA              1 
+# 2    2       NA               NA                  NA              2
+</code></pre>
+
+<p>Note how in this case, LCCA did not converge for both teams and was therefore unable to return a value for faultline strength. In small and relatively homogeneous subgroups, this happens quite often (Meyer & Glenz, 2013).</p>
+
+
+<h1 id="reformatting-and-exporting-the-faultline-scores-for-use-in-other-applications">7. Reformatting and exporting the faultline scores for use in other applications</h1>
+
+<h2><a name="convert">7.1 Converting the result to the &#x0027long&#x0027 format with one row for each team member</a></h2>
+<p>Many analyses such as multilevel models require one row of data for each participant like in the raw data containing the team members&#x0027 diversity attributes. The output of the faultline calculation is however a data frame with one row per team. To convert this data frame into a &#x0027long&#x0027 data frame with one row per team member, one can use the <code>summary()</code> function. It contains an object <code>$long</code> in that format, which can be displayed by adding the extension <code>$long</code> to the call to the <code>summary()</code> function:</p>
+<pre><code>my_ASW
+#   team          fl.value mbr_to_subgroups number_of_subgroups subgroup_sizes
+# 1    1 0.331799912553719      1 2 1 2 2 1                   2            3 3
+# 2    2 0.805489497404053    1 1 2 2 3 3 3                   2            2 2
+my_ASW_long <- summary(my_ASW)$long
+my_ASW_long
+#    team teamsize         fl.value fl.mbr mbr_to_subgroups number_of_subgroups subgroup_size
+# 1     1      6  0.331799912553719    avg                1                   2             3
+# 2     1      6  0.331799912553719    avg                2                   2             3
+# 3     1      6  0.331799912553719    avg                1                   2             3
+# 4     1      6  0.331799912553719    avg                2                   2             3
+# 5     1      6  0.331799912553719    avg                2                   2             3
+# 6     1      6  0.331799912553719    avg                1                   2             3
+# 7     2      6  0.805489497404053    avg                1                   3             2
+# 8     2      6  0.805489497404053    avg                1                   3             2
+# 9     2      6  0.805489497404053    avg                2                   3             2
+# 10    2      6  0.805489497404053    avg                2                   3             2
+# 11    2      6  0.805489497404053    avg                3                   3             2
+# 12    2      6  0.805489497404053    avg                3                   3             2</code></pre>
+<p>The result of <code>summary(my_ASW)$long </code>is a data frame object with one row for each team member in the same order as in the original data set. Thus, the original data set, teamdata_sub in this case, could be merged with this file for further analysis, e.g., <code>full_data <- cbind(teamdata_sub, my_ASW_long)</code>.
+
+Note that one can only merge the long result data frame with the raw data frame that contained no missings. If one wants to merge the long result data frame with the full data set that contained missings, one needs to remove the team members with missing values for their diversity attributes employed for faultline calculation as well.</p>
+
+<h2><a name="export">7.2 Exporting to SPSS</a></h2>
+<p>The result object created in a given faultline calculation (e.g., <code>my_ASW</code> or <code>my_ASW_long</code>) can be exported to a file for use in other applications. To export to an SPSS data set, use the function <code>write.foreign()</code> from the <code>foreign</code> package. It writes two files to the <a href="#wd">working directory</a>: A generic text file with the data and a syntax for a statistics program such as SPSS that enables it to read the data file.</p>
+
+<p>To export the &#x0027short&#x0027 result with one row per team member, it needs to be converted into a data frame object prior to exporting it, which can be achieved by calling the following command:</p>
+<p><code>my_ASW <- as.data.frame(print(my_ASW))</code></p>
+
+<p>Afterwards, the following code can be used to export to SPSS or to .csv by substituting my_ASW_long with my_ASW.</p>
+<p>To export the long result data frame <code>my_ASW_long</code> to SPSS, one can use the following syntax, which requires the library <code>foreign</code> to be activated (i.e., make sure to call <code>library(foreign)</code> prior to the following command):</p>
+<pre><code>write.foreign(df = my_ASW_long, 
+              datafile = &quot;my_ASW.dat&quot;, 
+              codefile = &quot;my_ASW.sps&quot;, 
+              package = &quot;SPSS&quot;)</code></pre>
+
+<p>This syntax writes the content of the result data frame <code>my_ASW_long</code> to a text file <code>my_ASW.dat</code> into the current working directory, along with an SPSS syntax file <code>my_ASW.sps</code> containing the SPSS commands necessary for reading <code>my_ASW.dat</code> into SPSS.</p>
+<p><strong>Important:</strong> You need to edit the first line of <code>my_ASW.sps</code> in the SPSS syntax viewer before the import will work. The first line needs to be edited in such a way that it contains the full path to <code>my_ASW.dat</code>. When you open <code>my_ASW.sps</code> in SPSS, the first line will read:</p>
+<pre><code>DATA LIST FILE= &quot;my_ASW.dat&quot;  free (&quot;,&quot;)</code></pre>
+<p>Obtain the current working directory to which you saved the file with the <code>getwd()</code> command in R. It will be printed to the R console, e.g.,</p>
+<pre><code>getwd()
+# [1] &quot;/Users/myname/myfolder&quot;</code></pre>
+<p>Copy the path into the SPSS syntax file so that it will look like this:</p>
+<pre><code>DATA LIST FILE= &quot;/Users/myname/myfolder/my_ASW.dat&quot;  free (&quot;,&quot;)</code></pre>
+<p>You can subsequently run the entire syntax file <code>my_ASW.sps</code> within the SPSS syntax viewer which should result in the proper import of the results of your faultline calculation into an SPSS data file.</p>
+
+<h2 id="exporting-to-a-comma-separated-values-file-.csv">7.3 Exporting to a comma separated values file (.csv)</h2>
+<p>Exporting the results of your faultline calculations to a .csv file is straight forward using the <code>write.csv()</code> command (or <code>write.csv2()</code> if you live in a country that employs the comma as the decimal separator). For example, to write the long result data frame <code>my_ASW_long</code> as a .csv file into the current <a href="#wd">working directory</a> the following syntax can be employed:</p>
+<pre><code>write.csv(my_ASW_long, file = &quot;my_ASW.csv&quot;)</code></pre>
+<hspace>
+<hr>
+
+<h1><a name="references">References</a></h1>
+<div id="layer1" style="text-indent: -30px;margin-left: 30px">
+
+<p>
+Bezrukova, K., Jehn, K. A., Zanutto, E. L., & Thatcher, S. M. B. (2009). Do workgroup faultlines help or hurt? A moderated model of faultlines, team identification, and group performance. Organization Science, 20, 35-50. <font face="Courier">  doi:10.1287/orsc.1080.0379</font>
+</p>
+
+<p>
+Gibson, C., & Vermeulen, F. (2003). A healthy divide: Subgroups as a stimulus for team learning behavior. Administrative Science Quarterly, 48, 202-239. <font face="Courier">  doi:10.2307/3556657</font>
+</p>
+
+<p>
+Lawrence, B., & Zyphur, M. (2011). Identifying organizational faultlines with latent class cluster analysis. Organizational Research Methods, 14, 32-57. <font face="Courier">  doi:10.1177/1094428110376838</font>
+</p>
+
+<p>
+Meyer, B. & Glenz, A. (2013). Team faultline measures: A computational comparison and a new approach to multiple subgroups. Organizational Research Methods. Advance online publication. <font face="Courier">doi:10.1177/1094428113484970</font>
+</p>
+
+
+<p>
+R Development Core Team. (2011). R: a language and environment for statistical computing. Computer software. R Foundation for Statistical Computing. Vienna, Austria. Retrieved 1 August 2011, from R Foun- dation for Statistical Computing: http://www.R-project.org
+</p>
+
+<p>
+Shaw, J. (2004). The development and analysis of a measure of group faultlines. Organizational Research Methods, 7, 66-100. <font face="Courier">  doi:10.1177/1094428103259562</font>
+</p>
+
+<p>
+Thatcher, S., Jehn, K., & Zanutto, E. (2003). Cracks in diversity research: The effects of diversity faultlines on conflict and performance. Group Decision and Negotiation, 12, 217-241. <font face="Courier">  doi:10.1023/A:102332540694 6</font>
+</p>
+
+<p>
+Trezzini, B. (2008). Probing the group faultline concept: An evaluation of measures of patterned multi-dimensional group diversity. Quality and Quantity, 42, 339-368. <font face="Courier">  doi:10.1007/s11135-006-9049-z</font>
+</p>
+
+<p>
+van Knippenberg, D., Dawson, J., West, M., & Homan, A. (2011). Diversity faultlines, shared objectives, and top management team performance. Human Relations, 64, 307-336. <font face="Courier">  doi:10.1177/0018726710378384</font>
+</p>
+
+<p>
+Zanutto, E. L., Bezrukova, K., & Jehn, K. A. (2010). Revisiting faultline conceptualization: measuring faultline strength and distance. Quality & Quantity, 45(3), 701-714.
+<font face="Courier">  doi:10.1007/s11135-009-9299-7</font>
+</p>
+  
+</div>  
+
+</body> 
+</html>
+
+
