@@ -1,0 +1,244 @@
+---
+title: 'asw.cluster : R Package for Faultline Algorithms'
+author: "Andreas Glenz and Bertolt Meyer"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(kableExtra)
+library(rmarkdown)
+```
+
+
+
+Package code by Andreas Glenz, documentation by Bertolt Meyer (bertolt dot meyer (at) psychologie dot tu-chemnitz dot de)
+
+**Current Version: 2.10.1**
+
+**Last update: 2022-06-09** 
+
+This is the supplemental material for:
+
+Meyer, B. & Glenz, A. (2013). Team faultline measures: A computational comparison and a new approach to multiple subgroups. Organizational Research Methods,16, 393-424. <https://doi.org/10.1177/1094428113484970>
+
+## New features of version 2.0
+
+- Ego-Faultlines: Determine faultlines from each group members individual perspective, by using the parameter i.level = TRUE.
+- Subgroup Homogeneity: Alternative method for silhouette-width calculation that accounts for outgroup homogeneity (parameter usesghomo = TRUE).
+- Attribute weights: Use weighed average of single-attribute faultlines as a new method to account for differences in attribute relevances (parameter by.attr = TRUE).
+
+## Installation
+
+The package is now hosted on GitHub and can be installed accordingly:
+
+```{r eval=FALSE}
+library(devtools)
+install_github("bertolt01/asw.cluster")
+```
+
+## General description
+
+The core function of the package is the `faultlines()` function. It expects a data frame (tibbles are not supported) passed with the `data =` parameter containing *the members of one or more teams as rows and their diversity attributes that are used for calculating faultline strength as columns*. Note that *all* columns of this data set will be used for calculating the faultline. Thus, this will most likely be a subset of a larger  data frame containing more variables. If the data set contains more than one team, it must contain a column that specifies a team number or ID for each team member, thus indicating team membership. The name of this column must be passed to the argument `group.par`.
+
+The attribute type (numeric or nominal) must be specified for each diversity attribute in the data frame. These attribute type definitions must be in the same order as the variables in the data frame. These attribute types are defined wi the parameter `attr.type`For example, if the data set contains the variables age (numeric in years), ethnicity (character factor), and gender (character factor), this parameter must be specified as
+`attr.type = c("numeric", "nominal", "nominal")`
+
+Note that the faultline measures proposed by Shaw (2004) and Trezzini (2008) require that all attributes are nominal. Thus, prior to calculating diversity faultline strengths with these two methods, numeric attributes such as age must be recoded to factors with levels such as 'young', 'middle-aged', and 'old' and the attribute type of this variable must be set to nominal.
+
+For faultline measures that can deal with numeric attributes (types "thatcher", "bezrukova", or "asw"), a weight for each diversity attribute must be specified with the `attr.weight` parameter. These weights indicate how strong a difference of 1 (in case of numeric attributes) or a different category (in case of nominal attributes) is fractured into the faultline. In the example case of age (in years), gender, and ethnicity, specifying this parameter as `attr.weight = c(0.1, 1, 1)` means that an age difference of ten years is equally weighted as a difference in gender, which is equally weighted as a difference in ethnicity. Note that these are the default values for Thatcher's et al. (2003) Fau that are probably used in most papers, but these appear to be arbitrary. More research is required with regard to the choice of these weights in a given context. Note that the parameter `rescale` and the parameter  `attr.weight` interact in such a way that numeric attributes are first rescaled according to `rescale` before all attributes (with dummy-coded values for nominal attributes) are multiplied by their appropriate weight given by the `attr.weight` parameter.
+
+The `method` parameter specifies the type of faultline measure. Currently, methods `"asw", "thatcher", "shaw", "bezrukova", "trezzini", "knippenberg", "lcca", "gibson"` are implemented. See below for details. 
+
+The `metric` parameter specifies whether Euclidean or Mahalanobis distances should be employed in determining how different team members are from each other. This metric is only employed by the methods "thatcher", "bezrukova", and "asw". Note that the former two methods (Bezrukova et al., 2009; Thatcher et al., 2003) were introduced based on Euclidean distances, which assume that diversity attributes are uncorrelated. Meyer and Glenz (2013) showed that correlations between diversity attributes (e.g., between age and tenure) can have a significant influence on diversity faultline measures. They thus suggested to employ Mahalanobis distances to control for such correlations. They explicitly included this option in the calculation of the ASW measure, but invoking it for Thatcher's et al. Fau or for Bezrukova's Faultline Distance measure is purely experimental. Employing Mahalanobis distances for the latter two measures will thus deliver a measure that has not been described in the literature. Furthermore, calculating Mahalanobis distances requires an inversion of the variance-covariance-martix of attributes. Using Mahalanobis metrics is therefore restricted to data sets with invertible variance-/covariance matrices, i.e., to *numeric attributes only*.
+
+## ASW faultlines for multiple subgroups
+
+ASW is the only diversity faultline measure that is suitable for the case where more than two homogeneous subgroups are possible in a given team. Here is an example for how to calculate ASW for an example data set teamdata_sub. It consists of two teams with six members each with the diversity attributes age, gender, and ethnicity. 
+
+
+```{r teamdata}
+teamdata_sub <- data.frame(teamid = c(rep(1,6),rep(2,6)), 
+  age = c(44,18,40,33,33,50,22,23,39,42,57,51), 
+  gender = c("f","m","f","f","m","f","f","f","m","m","m","m"), 
+  ethnicity = c("A","B","A","D","C","B","A","A","B","B","C","C"))
+
+teamdata_sub
+```
+
+The first team appears to be rather heterogeneous and cross-cut, but the second team appears to consist of three rather homogeneous subgroups. To calculate the ASW faultline measure for both teams, we need to specify the scales of the diversity attributes age, gender, and ethnicity as being numeric, nominal, and nominal. Instead of specifying the scale types in the call to the faultlines() function, they can also be stored in a variable that can be passed to the function:
+
+```{r set_attributes}
+my_attr <- c("numeric", "nominal", "nominal")
+```
+
+The ASW faultline algorithm also needs to know how to weigh the attributes, i.e., how much age difference is seen as equivalent to a difference in gender or ethnicity. Following the example in the introduction of this section, these can be stored in a variable as well:
+
+```{r set_weights}
+my_weights <- c(0.1, 1, 1)
+```
+
+After these considerations have been made, the faultlines can be calculated with the results being stored in a data frame that we call my_ASW. Note how in the call to the `faultline()` function, the name of the data frame containing the demographic information and the name of the variable in that data frame specifying team membership are also passed as parameters:
+
+```{r asw_faultlines, warning = FALSE, message = FALSE}
+library(asw.cluster)
+my_ASW <- faultlines(data = teamdata_sub, 
+                     group.par = "teamid", 
+                     attr.type = my_attr, 
+                     attr.weight = my_weights,
+                     method = "asw")
+
+my_ASW
+```
+
+The resulting value is a data frame with each line representing a team. The first column `team` denotes the team number and the second, `fl.value`, denotes the faultline strength for the given group (the ASW value). The column `mbr_to_subgroups` indicates to which subgroup each member belongs. Members are listed left-to right with reference to the top-to-bottom order of the data frame containing the raw data. The column `number_of_subgroups` indicates how many subgroups the algorithm detected in the given team, and the last column `subgroup_sizes` lists the sizes of the subgroups.
+
+`summary()` gives a more detailed summary:
+
+```{r summary}
+summary(my_ASW)
+```
+
+The result of `summary` also contains an individual-level result where each row represents a team member for merging with the original data (`teamdata_sub` in this example):
+
+```{r asw_faultlines_long}
+my_ASW_long <- summary(my_ASW)$long
+kable(my_ASW_long) %>% kable_styling()
+teamdata <- data.frame(teamdata_sub, my_ASW_long)
+kable(teamdata) %>% kable_styling()
+```
+
+the `own_subgroup` column is only used for individual-level faultlines as described below. 
+
+### Scaling attributes
+
+To circumvent the issue of assigning arbitrary weights for `attr.weight` (e.g., a difference in ten years of age equals a difference in gender), Bezrukova et al. (2009) recommend to scale numeric attributes by their standard deviation, and to dummy code nominal attributes with 0 and 1/√2. The latter results in an Euclidean distance of one between nominal attributes. This scaling is used by default in all papers employing the Fau * Dist faultline measure, and we also recommend to employ this scaling when calculating ASW faultlines. The application of this scaling is illustrated in the following example:
+
+```{r asw_scaling}
+my_ASW_sc <- faultlines(data = teamdata_sub,
+                               group.par = "teamid",
+                               attr.type = my_attr,
+                               rescale = "sd",
+                               method = "asw")
+my_ASW_sc
+```
+Note how the use of scaling makes the specification of weights unnecessary. Also note how the scaling of attributes leads to different results.^
+
+### Controlling for correlated attributes
+
+ASW can control for the correlation between numeric attributes when calculating the faultline. In the following example, the attributes age and tenure are correlated:
+
+```{r correlated_data}
+mynumericdata <- data.frame(teamid = c(rep(1,6),rep(2,6)), 
+                     age = c(44,18,40,33,33,50,22,23,39,42,57,51), 
+                     tenure = c(12,2.5,11,3,5,5,2,1,12,13,20,22))
+
+mynumericdata
+
+with(mynumericdata, cor.test(age, tenure))
+```
+
+
+If this correlatio0n is not taken into account, it distorts the faultline strength. In this example, if the correlation is not accounted for, ASW assumes that the two attributes are uncorrelated and returns a stronger faultline strength for the second team than for the first team:
+
+```{r correlated_data2}
+my_num_attr <- c("numeric", "numeric") 
+my_num_weights <- c(1,1)
+
+my_ASW <- faultlines(data = mynumericdata, 
+                            group.par = "teamid", 
+                            attr.type = my_num_attr, 
+                            attr.weight = my_num_weights, 
+                            method = "asw")
+my_ASW
+```
+
+However, the tenure of the members of the second team is pretty much in line with what one would expect given their age; only the team member whose age is 57 has a lower tenure than her college with 51. So there is actually a difference between the last two group members because for one of them, the tenure is not what one would expect given its strong correlation with age. Therefore, controlling for the correlation by employing the Mahalanobis metric in determining how similar people are, leads to a different solution:
+
+```{r mahalanobis}
+my_ASW_m <- faultlines(data = mynumericdata, 
+                       group.par = "teamid", 
+                       attr.type = my_num_attr, 
+                       attr.weight = my_num_weights, 
+                       method = "asw", 
+                       metric = "mahal")
+my_ASW_m
+```
+
+This solution is drastically different from the previous one: The number of subgroups changes and the second team now has a weaker faultline than the first team, whereas in the previous case, it was the other way around. This example illustrates the considerations that have to be made if diversity attributes are correlated.
+
+## Thatcher's *Fau*
+
+*Fau* (Thatcher et al., 2003) assumes the existence of two homogeneous subgroups. In the following, we show how to calculate it for the example data set `teamdata_sub` introduced above
+
+As with ASW faultlines, the types of the diversity attributes age, gender, and ethnicity (i.e., numeric, nominal, and nominal) must be defined
+
+```{r fau_types}
+my_attr <- c("numeric", "nominal", "nominal")
+```
+
+The Fau faultline algorithm also needs to know how to weigh the attributes, i.e., how much age difference is seen as equivalent to a difference in gender or ethnicity. Following the example in the introduction of this section, these can be stored in a variable as well:
+
+```{r fau_weights}
+my_weights <- c(0.1, 1, 1)
+```
+
+Calculatte *Fau*:
+
+```{r fau}
+my_Fau <- faultlines(data = teamdata_sub, 
+                     group.par = "teamid", 
+                     attr.type = my_attr, 
+                     attr.weight = my_weights,
+                     method = "thatcher")
+my_Fau
+```
+
+In the resulting data frame is formatted in the same way as in the example above: each line represents a team. The first column denotes the team number and the second, `fl.value`, the faultline strength (the Fau value in this case).  **Note that when calculating Fau, the number of subgroups is always fixed to 2** This may be inapropriate as in this case, as it clearly misrepresents the subgroup configuration of the second team. We thus discourage this algorithm for teams in which more than two subgroups are possible. 
+
+The `summary()` command works in the same way as described above. 
+
+## Faultline Strength * Faultline Distance (Bezrukova et al., 2009)
+
+Bezrukova et al., (2009) suggested  multiplying Thatcher's Fau for a given team with the Euclidean distance between the two subgroup centroids. Given that the Euclidean distance is already fractured into the calculation of *Fau*, Meyer and Glenz (2013) showed that this does not add more information to what *Fau* already delivers. **We thus discourage using this faultline measure**. To use it anyways, specify `method = "bezrukova"` as shown in this example:
+
+```{r}
+my_bezrukova <- faultlines(data = teamdata_sub, 
+                group.par = "teamid", 
+                attr.type = my_attr, 
+                attr.weight = my_weights, 
+                method = "bezrukova")
+my_bezrukova
+```
+
+Note that when calculating the Faultline Strength * Faultline Distance measure, the number of subgroups is always fixed to 2. Also note how the multiplication of the Fau value with the Euclidean distance results in a value that is outside the range of 0 and 1.
+
+The `summary()` command works in the same way as described above. 
+
+## Multiple correlations (van Knippenberg et al., 2011)
+
+Earlier versions of this package also included the measure by van Knippenberg et al. (2011) (invoked by `method = "knippenberg"`). It operationalizes faultline strength as the product of the multiple correlations between diversity attributes. It does not deliver the number of subgroups, nor a member-to-subgroup association. The measure also works with numeric attributes and thus also requires specifying attribute types as numeric or nominal like ASW. 
+
+**This measure is no longer suppported and thus depricated** because this measure has a built-in flaw: As it is the product of the corrlations of diversity attributes, the measure is 0 if two attributes are uncorrelated, regardless of the correlations among the other attributes. We are unaware of an application of this meaure outside of its original application. 
+
+##  Subgroup Strength (Gibson & Vermeulen, 2003)
+
+The measure by Gibson & Vermeulen (2003), invoked by `method = "gibson"`, quantifies the extent to which attributes overlap between the dyads that can be formed between all members of a team. Although this is equivalent to finding latent subgroup separations, theis method does not reveal the boundaries of those subgroups, i.e. the member-to-subgroup association, nor does it provide an estimation of the number of subgroups.
+
+As the measure by does not support the weighting of attributes, no weighting variable is required. 
+
+
+
+
+
+
+
+
+
+
+
+
+
