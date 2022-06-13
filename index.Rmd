@@ -316,6 +316,7 @@ my_lcca <- faultlines(data = teamdata_sub,
                              group.par = "teamid",
                              attr.type = my_attr,
                              method = "lcca")
+my_lcca
 ```
 
 # References
@@ -335,7 +336,7 @@ Trezzini, B. (2008). Probing the group faultline concept: An evaluation of measu
 
 van Knippenberg, D., Dawson, J., West, M., & Homan, A. (2011). Diversity faultlines, shared objectives, and top management team performance. *Human Relations, 64*, 307-336. <https://doi.org/10.1177/0018726710378384>
 
-Zanutto, E. L., Bezrukova, K., & Jehn, K. A. (2010). Revisiting faultline conceptualization: measuring faultline strength and distance. *Quality & Quantity, 45*(3), 701-714. <https://doi.org/10.1007/s11135-009-9299-7>
+Zanutto, E. L., Bezrukova, K., & Jehn, K. A. (2010). Revisiting faultline conceptualization: Measuring faultline strength and distance. *Quality & Quantity, 45*(3), 701-714. <https://doi.org/10.1007/s11135-009-9299-7>
 
 
 
