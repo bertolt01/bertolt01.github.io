@@ -1,9 +1,20 @@
+library(asw.cluster)
+
+
 teamdata_sub <- data.frame(teamid = c(rep(1,6),rep(2,6)), 
                            age = c(44,18,40,33,33,50,22,23,39,42,57,51), 
-                           gender = c("f","m","f","f","m","f","f","f","m","m","m","m"), 
-                           ethnicity = c("A","B","A","D","C","B","A","A","B","B","C","C"))
+                           gender = factor(c("f","m","f","f","m","f","f","f","m","m","m","m")), 
+                           ethnicity = factor(c("A","B","A","D","C","B","A","A","B","B","C","C")))
 
-teamdata_sub
+str(teamdata_sub)
+
+
+teamdata_sub <- data.frame(teamid = c(rep(1,6),rep(2,6)), 
+                           age = c(44,18,40,33,33,50,22,23,39,42,57,51), 
+                           gender = factor(c("f","m","f","f","m","f","f","f","m","m","m","m")), 
+                           ethnicity = factor(c("A","B","A","D","C","B","A","A","B","B","C","C")))
+
+str(teamdata_sub)
 
 my_attr <- c("numeric", "nominal", "nominal")
 
@@ -24,6 +35,11 @@ mycategorialdata <- data.frame(teamid = c(rep(1,6),rep(2,6)),
                                        "40 to 49", "50 to 59","50 to 59"), 
                                gender = c("f","m","f","f","m","f","f","f","m","m","m","m"), 
                                ethnicity = c("A","B","A","D","C","B","A","A","B","B","C","C"))
+
+str(mycategorialdata)
+mycategorialdata$age <- as.factor(mycategorialdata$age)
+mycategorialdata$gender <- as.factor(mycategorialdata$gender)
+mycategorialdata$ethnicity <- as.factor(mycategorialdata$ethnicity)
 
 my_cat_attr <- c("nominal", "nominal", "nominal")
 
